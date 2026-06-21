@@ -112,6 +112,11 @@ export const ProviderList: Readonly<ProviderInfo[]> = [
     ],
   },
   {
+    key: "bayflix",
+    name: "Bayflix",
+    description: "Bulgarian Subtitles Provider",
+  },
+  {
     key: "assrt",
     description: "Chinese Subtitles Provider",
     inputs: [
@@ -702,6 +707,11 @@ export const ProviderList: Readonly<ProviderInfo[]> = [
     description: "Bulgarian Subtitles Provider",
   },
   { key: "yifysubtitles", name: "YIFY Subtitles" },
+  {
+    key: "vladoonmooo",
+    name: "Vladoon Mooo",
+    description: "Bulgarian Subtitles Provider",
+  },
   {
     key: "zimuku",
     name: "Zimuku",
