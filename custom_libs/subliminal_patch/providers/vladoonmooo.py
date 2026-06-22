@@ -13,8 +13,9 @@ from requests import Session
 from subliminal.cache import region
 from subliminal.video import Episode
 from subliminal.video import Movie
-from subliminal_patch.providers._archive import subtitle_content_from_bytes
 from subliminal_patch.providers import Provider
+from subliminal_patch.providers.utils import get_archive_from_bytes
+from subliminal_patch.providers.utils import get_subtitle_from_archive
 from subliminal_patch.providers.utils import update_matches
 from subliminal_patch.subtitle import Subtitle
 from subliminal_patch.subtitle import guess_matches
@@ -240,7 +241,17 @@ class VladoonMoooProvider(Provider):
         else:
             logger.info("Using cache file %s", codecs.encode(cache_key, "hex_codec").decode("utf-8"))
 
-        subtitle.content = subtitle_content_from_bytes(response.content, video=subtitle.video)
-        if not subtitle.content:
+        archive = get_archive_from_bytes(response.content)
+        if archive is None:
             logger.error("Ignore unsupported Vladoon Mooo archive %r", response.headers)
+            _cache_delete(cache_key)
+            return
+
+        subtitle.content = get_subtitle_from_archive(
+            archive,
+            episode=subtitle.video.episode if isinstance(subtitle.video, Episode) else None,
+            get_first_subtitle=not isinstance(subtitle.video, Episode),
+        )
+        if not subtitle.content:
+            logger.error("No subtitle found in Vladoon Mooo archive %r", response.headers)
             _cache_delete(cache_key)

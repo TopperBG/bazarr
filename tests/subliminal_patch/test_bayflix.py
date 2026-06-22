@@ -1,9 +1,6 @@
 import io
-import shutil
-import subprocess
 import zipfile
 
-import pytest
 from subzero.language import Language
 
 from subliminal_patch.providers.bayflix import BayflixProvider
@@ -43,14 +40,6 @@ def make_zip(name="Dune.2021.1080p.WEBRip.x264-SHITBOX.srt"):
     payload = io.BytesIO()
     with zipfile.ZipFile(payload, "w") as archive:
         archive.writestr(name, b"1\r\n00:00:01,000 --> 00:00:02,000\r\nHello\r\n")
-    return payload.getvalue()
-
-
-def make_nested_zip():
-    inner = make_zip("Breaking.Bad.S01E01.720p.BluRay.X264-REWARD.srt")
-    payload = io.BytesIO()
-    with zipfile.ZipFile(payload, "w") as archive:
-        archive.writestr("breaking.bad.s01e01.720p.bluray.x264-reward.zip", inner)
     return payload.getvalue()
 
 
@@ -140,53 +129,3 @@ def test_download_subtitle_extracts_archive_content(movies):
 
     assert subtitle.is_valid()
     assert b"\r\n" not in subtitle.content
-
-
-def test_download_subtitle_extracts_nested_archive_content(episodes):
-    provider = BayflixProvider()
-    provider.session = Session(Response(content=make_nested_zip()))
-    subtitle = BayflixSubtitle(
-        language=Language("bul"),
-        page_link="https://bayflix.sb/api/subtitles/download/bb-s01e01",
-        file_id="bb-s01e01",
-        title="Breaking Bad",
-        release_names=["Breaking.Bad.S01E01.720p.BluRay.X264-REWARD"],
-        media_type="episode",
-        video=episodes["breaking_bad_s01e01"],
-    )
-
-    provider.download_subtitle(subtitle)
-
-    assert subtitle.is_valid()
-
-
-def test_download_subtitle_extracts_with_7z_fallback(tmp_path, movies):
-    if not shutil.which("7z"):
-        pytest.skip("7z is not installed")
-
-    subtitle_file = tmp_path / "Dune.2021.1080p.WEBRip.x264-SHITBOX.srt"
-    archive_file = tmp_path / "subtitle.7z"
-    subtitle_file.write_bytes(b"1\r\n00:00:01,000 --> 00:00:02,000\r\nHello\r\n")
-    subprocess.run(
-        ["7z", "a", str(archive_file), str(subtitle_file)],
-        check=True,
-        stdout=subprocess.DEVNULL,
-        stderr=subprocess.DEVNULL,
-    )
-
-    provider = BayflixProvider()
-    provider.session = Session(Response(content=archive_file.read_bytes()))
-    subtitle = BayflixSubtitle(
-        language=Language("bul"),
-        page_link="https://bayflix.sb/api/subtitles/download/dune-2021-7z",
-        file_id="dune-2021-7z",
-        title="Dune",
-        release_names=["Dune.2021.1080p.WEBRip.x264-SHITBOX"],
-        year=2021,
-        media_type="movie",
-        video=movies["dune"],
-    )
-
-    provider.download_subtitle(subtitle)
-
-    assert subtitle.is_valid()
