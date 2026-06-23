@@ -206,7 +206,7 @@ class BayflixProvider(Provider):
         subtitles = []
         params = {"title": _search_title(video)}
 
-        logger.info("Searching Bayflix subtitles: %r", params)
+        logger.debug("Searching Bayflix subtitles: %r", params)
         response = self.session.get(_SEARCH_URL, params=params, timeout=20)
         response.raise_for_status()
 
@@ -252,7 +252,7 @@ class BayflixProvider(Provider):
         return [subtitle for language in languages for subtitle in self.query(language, video)]
 
     def download_subtitle(self, subtitle):
-        logger.info("Downloading Bayflix subtitle %r", subtitle.page_link)
+        logger.debug("Downloading Bayflix subtitle %r", subtitle.page_link)
         cache_key = sha1(subtitle.page_link.encode("utf-8")).digest()
         response = _cache_get(cache_key)
 
@@ -261,7 +261,10 @@ class BayflixProvider(Provider):
             response.raise_for_status()
             _cache_set(cache_key, response)
         else:
-            logger.info("Using cache file %s", codecs.encode(cache_key, "hex_codec").decode("utf-8"))
+            logger.debug(
+                "Using cache file %s",
+                codecs.encode(cache_key, "hex_codec").decode("utf-8"),
+            )
 
         archive = get_archive_from_bytes(response.content)
         if archive is None:
